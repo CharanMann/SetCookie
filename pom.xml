@@ -27,11 +27,9 @@
     </parent>
 
     <artifactId>SetCustomPersistentCookie</artifactId>
-
-    <groupId>org.forgerock.am</groupId>
     <version>1.0.0</version>    
     <name>Template for an Auth Tree Node maven project</name>
-    <description>An Authentication Tree Node for ForgeRock's Identity Platform</description>
+    <description>Set Custom Persistent Cookie</description>
     
     <repositories>
         <repository>
@@ -43,5 +41,12 @@
             <url>http://maven.forgerock.org/repo/private-releases</url>
         </repository>
     </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.forgerock.am</groupId>
+            <artifactId>auth-nodes</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

@@ -18,86 +18,136 @@
 package org.forgerock.openam.auth.nodes;
 
 import com.google.inject.assistedinject.Assisted;
-import com.iplanet.sso.SSOException;
-import com.sun.identity.idm.AMIdentity;
-import com.sun.identity.idm.IdRepoException;
 import com.sun.identity.shared.debug.Debug;
+import com.sun.identity.sm.RequiredValueValidator;
 import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
-import org.forgerock.openam.core.CoreWrapper;
+import org.forgerock.openam.auth.nodes.treehook.CreateCustomPersistentCookieTreeHook;
+import org.forgerock.openam.auth.nodes.validators.HmacSigningKeyValidator;
+import org.forgerock.openam.sm.annotations.adapters.Password;
+import org.forgerock.openam.sm.annotations.adapters.TimeUnit;
+import org.forgerock.util.time.Duration;
 
 import javax.inject.Inject;
+import java.util.Set;
+import java.util.UUID;
 
-import static org.forgerock.openam.auth.node.api.SharedStateConstants.REALM;
-import static org.forgerock.openam.auth.node.api.SharedStateConstants.USERNAME;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static org.forgerock.openam.session.SessionConstants.PERSISTENT_COOKIE_SESSION_PROPERTY;
 
-/** 
- * A node that checks to see if zero-page login headers have specified username and shared key 
- * for this request. 
+/**
+ * A node that checks to see if zero-page login headers have specified username and shared key
+ * for this request.
  */
-@Node.Metadata(outcomeProvider  = AbstractDecisionNode.OutcomeProvider.class,
-               configClass      = SetCustomPersistentCookie.Config.class)
-public class SetCustomPersistentCookie extends AbstractDecisionNode {
+@Node.Metadata(outcomeProvider = SingleOutcomeNode.OutcomeProvider.class,
+        configClass = SetCustomPersistentCookie.Config.class)
+public class SetCustomPersistentCookie extends SingleOutcomeNode {
 
-    private final Config config;
-    private final CoreWrapper coreWrapper;
     private final static String DEBUG_FILE = "SetCustomPersistentCookie";
+    private static final String BUNDLE = SetCustomPersistentCookie.class.getName().replace(".", "/");
+    private static final Duration JWT_IDLE_TIMEOUT_IN_HOURS = Duration.duration(5, HOURS);
+    private static final Duration JWT_EXPIRY_TIME_IN_HOURS = Duration.duration(5, HOURS);
+    private static final String DEFAULT_COOKIE_NAME = "session-jwt";
+    private final Config config;
+    private final UUID nodeId;
     protected Debug debug = Debug.getInstance(DEBUG_FILE);
+
+    /**
+     * A {@link SetCustomPersistentCookie} constructor.
+     *
+     * @param config The service config.
+     * @param nodeId the uuid of this node instance.
+     * @throws NodeProcessException If the configuration was not valid.
+     */
+    @Inject
+    public SetCustomPersistentCookie(@Assisted Config config, @Assisted UUID nodeId) throws NodeProcessException {
+        this.config = config;
+        this.nodeId = nodeId;
+    }
+
+    @Override
+    public Action process(TreeContext context) throws NodeProcessException {
+        debug.message("SetCustomPersistentCookieNode started");
+        debug.message("Custom persistent cookie set");
+        return goToNext()
+                .putSessionProperty(PERSISTENT_COOKIE_SESSION_PROPERTY, config.persistentCookieName())
+                .addSessionHook(CreateCustomPersistentCookieTreeHook.class, nodeId, getClass().getSimpleName())
+                .build();
+    }
 
     /**
      * Configuration for the node.
      */
     public interface Config {
+
+        /**
+         * The idle time out. If the cookie is not used within this time, the jwt becomes invalid.
+         *
+         * @return the idle time out in hours.
+         */
         @Attribute(order = 100)
-        default String usernameHeader() {
-            return "X-OpenAM-Username";
+        @TimeUnit(HOURS)
+        default Duration idleTimeout() {
+            return JWT_IDLE_TIMEOUT_IN_HOURS;
         }
 
+        /**
+         * The max life. The cookie becomes invalid after this amount of time.
+         *
+         * @return the max life in hours.
+         */
         @Attribute(order = 200)
-        default String passwordHeader() {
-            return "X-OpenAM-Password";
+        @TimeUnit(HOURS)
+        default Duration maxLife() {
+            return JWT_EXPIRY_TIME_IN_HOURS;
         }
 
+        /**
+         * If true, instructs the browser to only send the cookie on secure connections.
+         *
+         * @return true to use secure cookie.
+         */
         @Attribute(order = 300)
-        default String secretKey() {
-            return "secretKey";
-        }
-    }
-
-
-    /**
-     * Create the node.
-     * @param config The service config.
-     * @throws NodeProcessException If the configuration was not valid.
-     */
-    @Inject
-    public SetCustomPersistentCookie(@Assisted Config config, CoreWrapper coreWrapper) throws NodeProcessException {
-        this.config = config;
-        this.coreWrapper = coreWrapper;
-    }
-
-    @Override
-    public Action process(TreeContext context) throws NodeProcessException {
-        boolean hasUsername = context.request.headers.containsKey(config.usernameHeader());
-        boolean hasPassword = context.request.headers.containsKey(config.passwordHeader());
-
-        if (!hasUsername || !hasPassword) {
-            return goTo(false).build();
+        default boolean useSecureCookie() {
+            return true;
         }
 
-        String secret = config.secretKey();
-        String password = context.request.headers.get(config.passwordHeader()).get(0);
-        String username = context.request.headers.get(config.usernameHeader()).get(0);
-        AMIdentity userIdentity = coreWrapper.getIdentity(username, context.sharedState.get(REALM).asString());
-        try {
-            if (secret.equals(password) && userIdentity != null && userIdentity.isExists() && userIdentity.isActive()) {
-                return goTo(true).replaceSharedState(context.sharedState.copy().put(USERNAME, username)).build();
-            }
-        } catch (IdRepoException e) {
-            debug.error("[" + DEBUG_FILE + "]: " + "Error locating user '{}' ", e);
-        } catch (SSOException e) {
-            debug.error("[" + DEBUG_FILE + "]: " + "Error locating user '{}' ", e);
+        /**
+         * If true, instructs the browser to prevent access to this cookie and only use it for http.
+         *
+         * @return true to use http only cookie.
+         */
+        @Attribute(order = 400)
+        default boolean useHttpOnlyCookie() {
+            return true;
         }
-        return goTo(false).build();
+
+        /**
+         * The signing key.
+         *
+         * @return the hmac signing key.
+         */
+        @Attribute(order = 500, validators = {RequiredValueValidator.class, HmacSigningKeyValidator.class})
+        @Password
+        char[] hmacSigningKey();
+
+        /**
+         * The name of the persistent cookie.
+         *
+         * @return the name of the persistent cookie.
+         */
+        @Attribute(order = 600)
+        default String persistentCookieName() {
+            return DEFAULT_COOKIE_NAME;
+        }
+
+        /**
+         * Primary LDAP server configuration.
+         *
+         * @return the set
+         */
+        @Attribute(order = 700, validators = {RequiredValueValidator.class})
+        Set<String> userAttributes();
+
     }
 }
