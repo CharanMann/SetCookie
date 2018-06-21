@@ -24,6 +24,7 @@ import org.forgerock.openam.annotations.sm.Attribute;
 import org.forgerock.openam.auth.node.api.*;
 import org.forgerock.openam.auth.nodes.treehook.CreateCustomPersistentCookieTreeHook;
 import org.forgerock.openam.auth.nodes.validators.HmacSigningKeyValidator;
+import org.forgerock.openam.core.CoreWrapper;
 import org.forgerock.openam.sm.annotations.adapters.Password;
 import org.forgerock.openam.sm.annotations.adapters.TimeUnit;
 import org.forgerock.util.time.Duration;
@@ -33,7 +34,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import static java.util.concurrent.TimeUnit.HOURS;
-import static org.forgerock.openam.session.SessionConstants.PERSISTENT_COOKIE_SESSION_PROPERTY;
+import static org.forgerock.openam.auth.node.api.SharedStateConstants.REALM;
+import static org.forgerock.openam.auth.node.api.SharedStateConstants.USERNAME;
+
 
 /**
  * A node that checks to see if zero-page login headers have specified username and shared key
@@ -50,7 +53,12 @@ public class SetCustomPersistentCookie extends SingleOutcomeNode {
     private static final String DEFAULT_COOKIE_NAME = "session-jwt";
     private final Config config;
     private final UUID nodeId;
-    protected Debug debug = Debug.getInstance(DEBUG_FILE);
+    private final CoreWrapper coreWrapper;
+    private Debug debug = Debug.getInstance(DEBUG_FILE);
+
+    private String SESSION_USERNAME = "SESSION_USERNAME";
+    private String SESSION_REALM_NAME = "SESSION_REALM_NAME";
+
 
     /**
      * A {@link SetCustomPersistentCookie} constructor.
@@ -60,36 +68,30 @@ public class SetCustomPersistentCookie extends SingleOutcomeNode {
      * @throws NodeProcessException If the configuration was not valid.
      */
     @Inject
-    public SetCustomPersistentCookie(@Assisted Config config, @Assisted UUID nodeId) throws NodeProcessException {
+    public SetCustomPersistentCookie(@Assisted Config config, @Assisted UUID nodeId, CoreWrapper coreWrapper) throws NodeProcessException {
         this.config = config;
         this.nodeId = nodeId;
+        this.coreWrapper = coreWrapper;
     }
 
     @Override
     public Action process(TreeContext context) throws NodeProcessException {
         debug.message("SetCustomPersistentCookieNode started");
         debug.message("Custom persistent cookie set");
+
         return goToNext()
-                .putSessionProperty(PERSISTENT_COOKIE_SESSION_PROPERTY, config.persistentCookieName())
+//                   .putSessionProperty(PERSISTENT_COOKIE_SESSION_PROPERTY, config.persistentCookieName())
+                .putSessionProperty(SESSION_USERNAME, context.sharedState.get(USERNAME).asString())
+                .putSessionProperty(SESSION_REALM_NAME, context.sharedState.get(REALM).asString())
                 .addSessionHook(CreateCustomPersistentCookieTreeHook.class, nodeId, getClass().getSimpleName())
                 .build();
     }
+
 
     /**
      * Configuration for the node.
      */
     public interface Config {
-
-        /**
-         * The idle time out. If the cookie is not used within this time, the jwt becomes invalid.
-         *
-         * @return the idle time out in hours.
-         */
-        @Attribute(order = 100)
-        @TimeUnit(HOURS)
-        default Duration idleTimeout() {
-            return JWT_IDLE_TIMEOUT_IN_HOURS;
-        }
 
         /**
          * The max life. The cookie becomes invalid after this amount of time.

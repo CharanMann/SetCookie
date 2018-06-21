@@ -58,7 +58,7 @@ import java.util.Map;
  */
 public class SetCustomPersistentCookiePlugin extends AbstractNodeAmPlugin {
 
-    static private String currentVersion = "1.0.0";
+    static private String currentVersion = "2.1.0";
 
     /**
      * Specify the Map of list of node classes that the plugin is providing. These will then be installed and
@@ -88,8 +88,6 @@ public class SetCustomPersistentCookiePlugin extends AbstractNodeAmPlugin {
      * {@link #onAmUpgrade(String, String)} and {@link #upgrade(String)} have been called (if relevant).
      * <p>
      * No need to implement this unless your AuthNode has specific requirements on startup.
-     *
-     * @param startupType The type of startup that is taking place.
      */
     @Override
     public void onStartup() throws PluginException {
@@ -106,6 +104,9 @@ public class SetCustomPersistentCookiePlugin extends AbstractNodeAmPlugin {
      */
     @Override
     public void upgrade(String fromVersion) throws PluginException {
+        if (!fromVersion.equals(currentVersion)) {
+            pluginTools.upgradeAuthNode(SetCustomPersistentCookie.class);
+        }
         super.upgrade(fromVersion);
     }
 
