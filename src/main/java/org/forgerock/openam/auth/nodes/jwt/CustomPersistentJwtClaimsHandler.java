@@ -73,6 +73,7 @@ public class CustomPersistentJwtClaimsHandler {
 
         StringBuilder cookieValue = new StringBuilder();
 
+        
         for (String attribute : attributes) {
             debug.message("[" + DEBUG_FILE + "]: Looking for profile attribute " + attribute);
 
