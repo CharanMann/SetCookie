@@ -1,4 +1,6 @@
 /*
+ * Copyright © 2019 ForgeRock, AS.
+ *
  * The contents of this file are subject to the terms of the Common Development and
  * Distribution License (the License). You may not use this file except in compliance with the
  * License.
@@ -11,7 +13,9 @@
  * Header, with the fields enclosed by brackets [] replaced by your own identifying
  * information: "Portions copyright [year] [name of copyright owner]".
  *
- * Copyright 2018 ForgeRock AS.
+ * Portions Copyrighted 2019 Charan Mann
+ *
+ * SetCookie: Created by Charan Mann on 2019-05-24 , 08:57.
  */
 
 package org.forgerock.openam.auth.nodes;
