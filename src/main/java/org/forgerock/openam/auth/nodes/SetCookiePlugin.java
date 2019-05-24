@@ -108,9 +108,6 @@ public class SetCookiePlugin extends AbstractNodeAmPlugin {
      */
     @Override
     public void upgrade(String fromVersion) throws PluginException {
-        if (!fromVersion.equals(currentVersion)) {
-            pluginTools.upgradeAuthNode(SetCookie.class);
-        }
         super.upgrade(fromVersion);
     }
 
