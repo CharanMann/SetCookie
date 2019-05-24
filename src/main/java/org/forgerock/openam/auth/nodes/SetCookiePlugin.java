@@ -56,9 +56,9 @@ import java.util.Map;
  * @supported.all.api
  * @since AM 5.5.0
  */
-public class SetCustomPersistentCookiePlugin extends AbstractNodeAmPlugin {
+public class SetCookiePlugin extends AbstractNodeAmPlugin {
 
-    static private String currentVersion = "2.1.0";
+    static private String currentVersion = "1.0.0";
 
     /**
      * Specify the Map of list of node classes that the plugin is providing. These will then be installed and
@@ -68,8 +68,8 @@ public class SetCustomPersistentCookiePlugin extends AbstractNodeAmPlugin {
      */
     @Override
     protected Map<String, Iterable<? extends Class<? extends Node>>> getNodesByVersion() {
-        return Collections.singletonMap(SetCustomPersistentCookiePlugin.currentVersion,
-                Collections.singletonList(SetCustomPersistentCookie.class));
+        return Collections.singletonMap(SetCookiePlugin.currentVersion,
+                Collections.singletonList(SetCookie.class));
     }
 
     /**
@@ -105,7 +105,7 @@ public class SetCustomPersistentCookiePlugin extends AbstractNodeAmPlugin {
     @Override
     public void upgrade(String fromVersion) throws PluginException {
         if (!fromVersion.equals(currentVersion)) {
-            pluginTools.upgradeAuthNode(SetCustomPersistentCookie.class);
+            pluginTools.upgradeAuthNode(SetCookie.class);
         }
         super.upgrade(fromVersion);
     }
@@ -118,6 +118,6 @@ public class SetCustomPersistentCookiePlugin extends AbstractNodeAmPlugin {
      */
     @Override
     public String getPluginVersion() {
-        return SetCustomPersistentCookiePlugin.currentVersion;
+        return SetCookiePlugin.currentVersion;
     }
 }

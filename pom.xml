@@ -15,21 +15,34 @@
  * Copyright 2018 ForgeRock AS.
  * 
 -->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <artifactId>auth-tree-node-parent</artifactId>
-        <groupId>org.forgerock.am</groupId>
-        <version>6.0.0</version>
-    </parent>
-
-    <artifactId>SetCustomPersistentCookie</artifactId>
+    <groupId>org.forgerock.am</groupId>
+    <artifactId>SetCookie</artifactId>
     <version>1.0.0</version>    
-    <name>Template for an Auth Tree Node maven project</name>
-    <description>Set Custom Persistent Cookie</description>
+    <name>Set Cookie Node</name>
+    <description>Set Cookie</description>
+
+    <properties>
+        <am.version>6.5.1</am.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.forgerock.am</groupId>
+                <artifactId>openam-auth-trees</artifactId>
+                <type>pom</type>
+                <scope>import</scope>
+                <version>${am.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     
     <repositories>
         <repository>
@@ -45,7 +58,24 @@
     <dependencies>
         <dependency>
             <groupId>org.forgerock.am</groupId>
-            <artifactId>auth-nodes</artifactId>
+            <artifactId>auth-node-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.forgerock.am</groupId>
+            <artifactId>openam-guice-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.forgerock.am</groupId>
+            <artifactId>openam-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
