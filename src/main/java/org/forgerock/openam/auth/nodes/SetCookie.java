@@ -43,6 +43,7 @@ public class SetCookie extends SingleOutcomeNode {
     private static final Duration EXPIRY_TIME_IN_HOURS = Duration.duration(5, HOURS);
     private static final String COOKIE_NAME = "Custom_Cookie";
     private static final String SESSION_PROPERTY = "Session_Value";
+    private static final String COOKIE_DOMAIN = ".example.com";
 
     private final Logger logger = LoggerFactory.getLogger(SetCookie.class);
     private final UUID nodeId;
@@ -68,9 +69,9 @@ public class SetCookie extends SingleOutcomeNode {
     public interface Config {
 
         /**
-         * The max life. The cookies become invalid after this amount of time.
+         * The cookie name
          *
-         * @return the max life in hours.
+         * @return cookie name
          */
         @Attribute(order = 100)
         default String cookieName() {
@@ -78,9 +79,9 @@ public class SetCookie extends SingleOutcomeNode {
         }
 
         /**
-         * The max life. The cookies become invalid after this amount of time.
+         * The session property used for to set cookie value
          *
-         * @return the max life in hours.
+         * @return session property
          */
         @Attribute(order = 200)
         default String sessionProperty() {
@@ -116,6 +117,16 @@ public class SetCookie extends SingleOutcomeNode {
         @Attribute(order = 500)
         default boolean useHttpOnlyCookie() {
             return true;
+        }
+
+        /**
+         * The cookie domain.
+         *
+         * @return domain to set cookie
+         */
+        @Attribute(order = 600)
+        default String cookieDomain() {
+            return COOKIE_DOMAIN;
         }
     }
 }
